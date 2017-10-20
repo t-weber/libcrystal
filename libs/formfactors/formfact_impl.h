@@ -363,7 +363,7 @@ ScatlenList<T>::ScatlenList()
 			slen.xsec_scat = slen.xsec_coh + slen.xsec_incoh;
 		}
 
-		slen.xsec_abs = xml.Query<ScatlenList<T>::value_type>((strAtom + "/xsec_abs").c_str(), 0.);
+		slen.xsec_abs = xml.Query<ScatlenList<T>::value_type>((strAtom + "/xsec_absorp").c_str(), 0.);
 
 
 		slen.abund = xml.QueryOpt<ScatlenList<T>::real_type>((strAtom + "/abund").c_str());

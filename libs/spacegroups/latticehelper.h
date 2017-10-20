@@ -85,6 +85,13 @@ struct LatticeCommon
 
 	tl::Plane<t_real> plane, planeReal;
 
+	// real unit cell volume in A^3
+	t_real dVol = 0;
+
+	// microscopic cross-sections in fm^2
+	t_real dsigCoh=0, dsigInc=0, dsigScat=0, dsigAbs=0;
+	// macroscopic cross-sections in 1/cm
+	t_real dSigScat=0, dSigAbs=0;
 
 	LatticeCommon() = default;
 	~LatticeCommon() = default;
@@ -139,6 +146,7 @@ struct LatticeCommon
 			}
 		}
 	}
+
 
 	/**
 	 * super cell & environments
@@ -215,6 +223,47 @@ struct LatticeCommon
 	}
 
 
+	/**
+	 * calculate scattering cross sections, etc.
+	 */
+	void CalcCrysInfos()
+	{
+		dsigCoh = dsigInc = dsigScat = dsigAbs = 0;
+		dSigScat = dSigAbs = 0;
+
+		dVol = lattice.GetVol();
+
+		std::shared_ptr<const ScatlenList<t_real>> lstsl
+			= ScatlenList<t_real>::GetInstance();
+
+		for(const std::string& strElem : vecAllNames)
+		{
+   			const typename ScatlenList<t_real>::elem_type* pElem = lstsl->Find(strElem);
+			if(!pElem)
+			{
+				tl::log_err("Element \"", strElem, "\" not found in scattering length table. Ignoring in cross-sections!");
+				continue;
+			}
+
+			// microscopic cross-sections
+			dsigCoh += pElem->GetXSecCoherent().real();
+			dsigInc += pElem->GetXSecIncoherent().real();
+			dsigScat += pElem->GetXSecScatter().real();
+			dsigAbs += pElem->GetXSecAbsorption().real();
+
+			// macroscopic cross-sections
+			dSigScat += tl::macro_xsect(pElem->GetXSecScatter().real()*tl::get_one_femtometer<t_real>()*tl::get_one_femtometer<t_real>(),
+				1, dVol*tl::get_one_angstrom<t_real>()*tl::get_one_angstrom<t_real>()*tl::get_one_angstrom<t_real>()) * tl::get_one_centimeter<t_real>();
+
+			dSigAbs += tl::macro_xsect(pElem->GetXSecAbsorption().real()*tl::get_one_femtometer<t_real>()*tl::get_one_femtometer<t_real>(),
+				1, dVol*tl::get_one_angstrom<t_real>()*tl::get_one_angstrom<t_real>()*tl::get_one_angstrom<t_real>()) * tl::get_one_centimeter<t_real>();
+		}
+	}
+
+
+	/**
+	 * calculate everything
+	 */
 	bool Calc(const tl::Lattice<t_real>& lat, const tl::Lattice<t_real>& rec,
 		const tl::Plane<t_real>& plRLU, const tl::Plane<t_real>& plFrac,
 		const SpaceGroup<t_real> *pSG, const std::vector<AtomPos<t_real>>* pvecAt)
@@ -300,12 +349,14 @@ struct LatticeCommon
 
 		CalcStructFacts();
 		CalcSC();
+		CalcCrysInfos();
 
 		return true;
 	}
 
 
 	bool CanCalcStructFact() const { return vecScatlens.size() != 0; }
+
 
 	std::tuple<std::complex<t_real>, t_real, t_real> GetStructFact(const t_vec& vecPeak) const
 	{
