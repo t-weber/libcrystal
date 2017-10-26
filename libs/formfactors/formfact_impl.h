@@ -23,16 +23,16 @@ template<typename T> std::shared_ptr<PeriodicSystem<T>> PeriodicSystem<T>::s_ins
 template<typename T> std::mutex PeriodicSystem<T>::s_mutex;
 
 template<typename T>
-PeriodicSystem<T>::PeriodicSystem()
+PeriodicSystem<T>::PeriodicSystem(const std::string& strFile, const std::string& strXmlRoot)
 {
-	std::string strTabFile = find_resource("res/data/elements.xml");
+	std::string strTabFile = find_resource(strFile);
 	tl::log_debug("Loading periodic table from file \"", strTabFile, "\".");
 
 	tl::Prop<std::string> xml;
 	if(!xml.Load(strTabFile.c_str(), tl::PropType::XML))
 		return;
 
-	const std::size_t iNumDat = xml.Query<std::size_t>("pte/num_elems", 0);
+	const std::size_t iNumDat = xml.Query<std::size_t>(strXmlRoot + "/pte/num_elems", 0);
 	if(!iNumDat)
 	{
 		tl::log_err("No data in periodic table of elements.");
@@ -45,44 +45,48 @@ PeriodicSystem<T>::PeriodicSystem()
 		elem_type elem;
 		std::string strAtom = "pte/elem_" + tl::var_to_str(iElem);
 
-		elem.strAtom = xml.Query<std::string>((strAtom + "/name").c_str(), "");
+		elem.strAtom = xml.Query<std::string>(strXmlRoot + "/" + strAtom + "/name", "");
 		if(elem.strAtom == "")
 			continue;
 
-		elem.iNr = xml.Query<int>((strAtom + "/num").c_str(), -1.);
-		elem.iPeriod = xml.Query<int>((strAtom + "/period").c_str(), -1.);
-		elem.iGroup = xml.Query<int>((strAtom + "/group").c_str(), -1.);
+		elem.iNr = xml.Query<int>(strXmlRoot + "/" + strAtom + "/num", -1.);
+		elem.iPeriod = xml.Query<int>(strXmlRoot + "/" + strAtom + "/period", -1.);
+		elem.iGroup = xml.Query<int>(strXmlRoot + "/" + strAtom + "/group", -1.);
 
-		elem.strOrbitals = xml.Query<std::string>((strAtom + "/orbitals").c_str(), "");
-		elem.strBlock = xml.Query<std::string>((strAtom + "/block").c_str(), "");
+		elem.strOrbitals = xml.Query<std::string>(strXmlRoot + "/" + strAtom + "/orbitals", "");
+		elem.strBlock = xml.Query<std::string>(strXmlRoot + "/" + strAtom + "/block", "");
 
-		elem.dMass = xml.Query<value_type>((strAtom + "/m").c_str(), -1.);
+		elem.dMass = xml.Query<value_type>(strXmlRoot + "/" + strAtom + "/m", -1.);
 
-		elem.dRadCov = xml.Query<value_type>((strAtom + "/r_cov").c_str(), -1.);
-		elem.dRadVdW = xml.Query<value_type>((strAtom + "/r_vdW").c_str(), -1.);
+		elem.dRadCov = xml.Query<value_type>(strXmlRoot + "/" + strAtom + "/r_cov", -1.);
+		elem.dRadVdW = xml.Query<value_type>(strXmlRoot + "/" + strAtom + "/r_vdW", -1.);
 
-		elem.dEIon = xml.Query<value_type>((strAtom + "/E_ion").c_str(), -1.);
-		elem.dEAffin = xml.Query<value_type>((strAtom + "/E_affin").c_str(), -1.);
+		elem.dEIon = xml.Query<value_type>(strXmlRoot + "/" + strAtom + "/E_ion", -1.);
+		elem.dEAffin = xml.Query<value_type>(strXmlRoot + "/" + strAtom + "/E_affin", -1.);
 
-		elem.dTMelt = xml.Query<value_type>((strAtom + "/T_melt").c_str(), -1.);
-		elem.dTBoil = xml.Query<value_type>((strAtom + "/T_boil").c_str(), -1.);
+		elem.dTMelt = xml.Query<value_type>(strXmlRoot + "/" + strAtom + "/T_melt", -1.);
+		elem.dTBoil = xml.Query<value_type>(strXmlRoot + "/" + strAtom + "/T_boil", -1.);
 
 		s_vecAtoms.push_back(std::move(elem));
 	}
 
-	s_strSrc = xml.Query<std::string>("pte/source", "");
-	s_strSrcUrl = xml.Query<std::string>("pte/source_url", "");
+	s_strSrc = xml.Query<std::string>(strXmlRoot + "/pte/source", "");
+	s_strSrcUrl = xml.Query<std::string>(strXmlRoot + "/pte/source_url", "");
 }
 
 template<typename T> PeriodicSystem<T>::~PeriodicSystem() {}
 
 template<typename T>
-std::shared_ptr<const PeriodicSystem<T>> PeriodicSystem<T>::GetInstance()
+std::shared_ptr<const PeriodicSystem<T>> PeriodicSystem<T>::GetInstance(const char* pcFile)
 {
 	std::lock_guard<std::mutex> _guard(s_mutex);
 
 	if(!s_inst)
-		s_inst = std::shared_ptr<PeriodicSystem<T>>(new PeriodicSystem<T>());
+	{
+		//s_inst = std::make_shared<PeriodicSystem<T>>("");
+		s_inst = std::shared_ptr<PeriodicSystem<T>>(new PeriodicSystem<T>(
+			pcFile ? pcFile : "res/data/elements.xml", ""));
+	}
 
 	return s_inst;
 }
@@ -119,16 +123,16 @@ std::mutex FormfactList<T>::s_mutex;
 
 
 template<typename T>
-FormfactList<T>::FormfactList()
+FormfactList<T>::FormfactList(const std::string& strFile, const std::string& strXmlRoot)
 {
-	std::string strTabFile = find_resource("res/data/ffacts.xml");
+	std::string strTabFile = find_resource(strFile);
 	tl::log_debug("Loading atomic form factors from file \"", strTabFile, "\".");
 
 	tl::Prop<std::string> xml;
 	if(!xml.Load(strTabFile.c_str(), tl::PropType::XML))
 		return;
 
-	const std::size_t iNumDat = xml.Query<std::size_t>("ffacts/num_atoms", 0);
+	const std::size_t iNumDat = xml.Query<std::size_t>(strXmlRoot + "/ffacts/num_atoms", 0);
 	if(!iNumDat)
 	{
 		tl::log_err("No data in atomic form factor list.");
@@ -141,12 +145,12 @@ FormfactList<T>::FormfactList()
 		elem_type ffact;
 		std::string strAtom = "ffacts/atom_" + tl::var_to_str(iSf);
 
-		ffact.strAtom = xml.Query<std::string>((strAtom + "/name").c_str(), "");
+		ffact.strAtom = xml.Query<std::string>(strXmlRoot + "/" +strAtom + "/name", "");
 		tl::get_tokens<value_type, std::string, std::vector<value_type>>
-			(xml.Query<std::string>((strAtom + "/a").c_str(), ""), " \t", ffact.a);
+			(xml.Query<std::string>(strXmlRoot + "/" + strAtom + "/a", ""), " \t", ffact.a);
 		tl::get_tokens<value_type, std::string, std::vector<value_type>>
-			(xml.Query<std::string>((strAtom + "/b").c_str(), ""), " \t", ffact.b);
-		ffact.c = xml.Query<value_type>((strAtom + "/c").c_str(), 0.);
+			(xml.Query<std::string>(strXmlRoot + "/" + strAtom + "/b", ""), " \t", ffact.b);
+		ffact.c = xml.Query<value_type>(strXmlRoot + "/" + strAtom + "/c", 0.);
 
 		if(!bIonStart && ffact.strAtom.find_first_of("+-") != std::string::npos)
 			bIonStart = 1;
@@ -157,8 +161,8 @@ FormfactList<T>::FormfactList()
 			s_vecIons.push_back(std::move(ffact));
 	}
 
-	s_strSrc = xml.Query<std::string>("ffacts/source", "");
-	s_strSrcUrl = xml.Query<std::string>("ffacts/source_url", "");
+	s_strSrc = xml.Query<std::string>(strXmlRoot + "/ffacts/source", "");
+	s_strSrcUrl = xml.Query<std::string>(strXmlRoot + "/ffacts/source_url", "");
 }
 
 template<typename T>
@@ -166,12 +170,16 @@ FormfactList<T>::~FormfactList()
 {}
 
 template<typename T>
-std::shared_ptr<const FormfactList<T>> FormfactList<T>::GetInstance()
+std::shared_ptr<const FormfactList<T>> FormfactList<T>::GetInstance(const char* pcFile)
 {
 	std::lock_guard<std::mutex> _guard(s_mutex);
 
 	if(!s_inst)
-		s_inst = std::shared_ptr<FormfactList<T>>(new FormfactList<T>());
+	{
+		//s_inst = std::make_shared<FormfactList<T>>("");
+		s_inst = std::shared_ptr<FormfactList<T>>(new FormfactList<T>(
+			pcFile ? pcFile : "res/data/ffacts.xml", ""));
+	}
 
 	return s_inst;
 }
@@ -218,16 +226,16 @@ std::mutex MagFormfactList<T>::s_mutex;
 
 
 template<typename T>
-MagFormfactList<T>::MagFormfactList()
+MagFormfactList<T>::MagFormfactList(const std::string& strFile, const std::string& strXmlRoot)
 {
-	std::string strTabFile = find_resource("res/data/magffacts.xml");
+	std::string strTabFile = find_resource(strFile);
 	tl::log_debug("Loading magnetic form factors from file \"", strTabFile, "\".");
 
 	tl::Prop<std::string, true> xml;
 	if(!xml.Load(strTabFile.c_str(), tl::PropType::XML))
 		return;
 
-	const std::size_t iNumDat = xml.Query<std::size_t>("magffacts/num_atoms", 0);
+	const std::size_t iNumDat = xml.Query<std::size_t>(strXmlRoot + "/magffacts/num_atoms", 0);
 	if(!iNumDat)
 	{
 		tl::log_err("No data in magnetic form factor list.");
@@ -239,13 +247,13 @@ MagFormfactList<T>::MagFormfactList()
 		elem_type ffact;
 		std::string strAtom = "magffacts/j0/atom_" + tl::var_to_str(iSf);
 
-		std::string strvecA = xml.Query<std::string>(strAtom + "/A");
-		std::string strveca = xml.Query<std::string>(strAtom + "/a");
+		std::string strvecA = xml.Query<std::string>(strXmlRoot + "/" + strAtom + "/A");
+		std::string strveca = xml.Query<std::string>(strXmlRoot + "/" + strAtom + "/a");
 
 		tl::get_tokens<value_type>(strvecA, std::string(";"), ffact.A0);
 		tl::get_tokens<value_type>(strveca, std::string(";"), ffact.a0);
 
-		ffact.strAtom = xml.Query<std::string>((strAtom + "/name").c_str(), "");
+		ffact.strAtom = xml.Query<std::string>(strXmlRoot + "/" + strAtom + "/name", "");
 
 		s_vecAtoms.push_back(std::move(ffact));
 	}
@@ -253,7 +261,7 @@ MagFormfactList<T>::MagFormfactList()
 	for(std::size_t iSf=0; iSf<iNumDat; ++iSf)
 	{
 		std::string strAtom = "magffacts/j2/atom_" + tl::var_to_str(iSf);
-		std::string strAtomName = xml.Query<std::string>((strAtom + "/name").c_str(), "");
+		std::string strAtomName = xml.Query<std::string>(strXmlRoot + "/" + strAtom + "/name", "");
 
 		MagFormfactList<T>::elem_type* pElem =
 			const_cast<MagFormfactList<T>::elem_type*>(Find(strAtomName));
@@ -263,15 +271,15 @@ MagFormfactList<T>::MagFormfactList()
 			continue;
 		}
 
-		std::string strvecA = xml.Query<std::string>(strAtom + "/A");
-		std::string strveca = xml.Query<std::string>(strAtom + "/a");
+		std::string strvecA = xml.Query<std::string>(strXmlRoot + "/" + strAtom + "/A");
+		std::string strveca = xml.Query<std::string>(strXmlRoot + "/" + strAtom + "/a");
 
 		tl::get_tokens<value_type>(strvecA, std::string(";"), pElem->A2);
 		tl::get_tokens<value_type>(strveca, std::string(";"), pElem->a2);
 	}
 
-	s_strSrc = xml.Query<std::string>("magffacts/source", "");
-	s_strSrcUrl = xml.Query<std::string>("magffacts/source_url", "");
+	s_strSrc = xml.Query<std::string>(strXmlRoot + "/magffacts/source", "");
+	s_strSrcUrl = xml.Query<std::string>(strXmlRoot + "/magffacts/source_url", "");
 }
 
 template<typename T>
@@ -279,12 +287,16 @@ MagFormfactList<T>::~MagFormfactList()
 {}
 
 template<typename T>
-std::shared_ptr<const MagFormfactList<T>> MagFormfactList<T>::GetInstance()
+std::shared_ptr<const MagFormfactList<T>> MagFormfactList<T>::GetInstance(const char* pcFile)
 {
 	std::lock_guard<std::mutex> _guard(s_mutex);
 
 	if(!s_inst)
-		s_inst = std::shared_ptr<MagFormfactList<T>>(new MagFormfactList<T>());
+	{
+		//s_inst = std::make_shared<MagFormfactList<T>>("");
+		s_inst = std::shared_ptr<MagFormfactList<T>>(new MagFormfactList<T>(
+			pcFile ? pcFile : "res/data/magffacts.xml", ""));
+	}
 
 	return s_inst;
 }
@@ -318,16 +330,16 @@ std::mutex ScatlenList<T>::s_mutex;
 
 
 template<typename T>
-ScatlenList<T>::ScatlenList()
+ScatlenList<T>::ScatlenList(const std::string& strFile, const std::string& strXmlRoot)
 {
-	std::string strTabFile = find_resource("res/data/scatlens.xml");
+	std::string strTabFile = find_resource(strFile);
 	tl::log_debug("Loading neutron scattering lengths from file \"", strTabFile, "\".");
 
 	tl::Prop<std::string> xml;
 	if(!xml.Load(strTabFile.c_str(), tl::PropType::XML))
 		return;
 
-	const std::size_t iNumDat = xml.Query<std::size_t>("scatlens/num_atoms", 0);
+	const std::size_t iNumDat = xml.Query<std::size_t>(strXmlRoot + "/scatlens/num_atoms", 0);
 	if(!iNumDat)
 	{
 		tl::log_err("No data in scattering length list.");
@@ -339,23 +351,23 @@ ScatlenList<T>::ScatlenList()
 		ScatlenList<T>::elem_type slen;
 		std::string strAtom = "scatlens/atom_" + tl::var_to_str(iSl);
 
-		slen.strAtom = xml.Query<std::string>((strAtom + "/name").c_str(), "");
-		slen.coh = xml.Query<ScatlenList<T>::value_type>((strAtom + "/coh").c_str(), 0.);
-		slen.incoh = xml.Query<ScatlenList<T>::value_type>((strAtom + "/incoh").c_str(), 0.);
+		slen.strAtom = xml.Query<std::string>(strXmlRoot + "/" + strAtom + "/name", "");
+		slen.coh = xml.Query<ScatlenList<T>::value_type>(strXmlRoot + "/" + strAtom + "/coh", 0.);
+		slen.incoh = xml.Query<ScatlenList<T>::value_type>(strXmlRoot + "/" + strAtom + "/incoh", 0.);
 
 		if(xml.Exists((strAtom + "/xsec_coh").c_str()))
-			slen.xsec_coh = xml.Query<ScatlenList<T>::value_type>((strAtom + "/xsec_coh").c_str(), 0.);
+			slen.xsec_coh = xml.Query<ScatlenList<T>::value_type>(strXmlRoot + "/" + strAtom + "/xsec_coh", 0.);
 		else
 			slen.xsec_coh = (slen.coh*std::conj(slen.coh)).real()*T(4)*tl::get_pi<T>();
 
 		if(xml.Exists((strAtom + "/xsec_incoh").c_str()))
-			slen.xsec_incoh = xml.Query<ScatlenList<T>::value_type>((strAtom + "/xsec_incoh").c_str(), 0.);
+			slen.xsec_incoh = xml.Query<ScatlenList<T>::value_type>(strXmlRoot + "/" + strAtom + "/xsec_incoh", 0.);
 		else
 			slen.xsec_incoh = (slen.incoh*std::conj(slen.incoh)).real()*T(4)*tl::get_pi<T>();
 
 		if(xml.Exists((strAtom + "/xsec_scat").c_str()))
 		{
-			slen.xsec_scat = xml.Query<ScatlenList<T>::value_type>((strAtom + "/xsec_scat").c_str(), 0.);
+			slen.xsec_scat = xml.Query<ScatlenList<T>::value_type>(strXmlRoot + "/" + strAtom + "/xsec_scat", 0.);
 			//tl::log_debug("Total scattering xsec exists for: ", slen.strAtom, ".");
 		}
 		else
@@ -363,11 +375,11 @@ ScatlenList<T>::ScatlenList()
 			slen.xsec_scat = slen.xsec_coh + slen.xsec_incoh;
 		}
 
-		slen.xsec_abs = xml.Query<ScatlenList<T>::value_type>((strAtom + "/xsec_absorp").c_str(), 0.);
+		slen.xsec_abs = xml.Query<ScatlenList<T>::value_type>(strXmlRoot + "/" + strAtom + "/xsec_absorp", 0.);
 
 
-		slen.abund = xml.QueryOpt<ScatlenList<T>::real_type>((strAtom + "/abund").c_str());
-		slen.hl = xml.QueryOpt<ScatlenList<T>::real_type>((strAtom + "/hl").c_str());
+		slen.abund = xml.QueryOpt<ScatlenList<T>::real_type>(strXmlRoot + "/" + strAtom + "/abund");
+		slen.hl = xml.QueryOpt<ScatlenList<T>::real_type>(strXmlRoot + "/" + strAtom + "/hl");
 
 		if(std::isdigit(slen.strAtom[0]))
 			s_vecIsotopes.push_back(std::move(slen));	// pure isotopes
@@ -393,8 +405,8 @@ ScatlenList<T>::ScatlenList()
 		iterElem->m_vecIsotopes.push_back(&isotope);
 	}
 
-	s_strSrc = xml.Query<std::string>("scatlens/source", "");
-	s_strSrcUrl = xml.Query<std::string>("scatlens/source_url", "");
+	s_strSrc = xml.Query<std::string>(strXmlRoot + "/scatlens/source", "");
+	s_strSrcUrl = xml.Query<std::string>(strXmlRoot + "/scatlens/source_url", "");
 
 #ifndef NDEBUG
 	// testing scattering lengths
@@ -416,7 +428,7 @@ ScatlenList<T>::ScatlenList()
 				vecbincoh.push_back(isotope->GetIncoherent());
 			}
 		}
-		
+
 		auto themean = tl::mean_value<decltype(vecAbund), decltype(vecbcoh)>
 			(vecAbund, vecbcoh);
 		auto thedev = tl::std_dev<decltype(vecAbund), decltype(vecbcoh)>
@@ -436,12 +448,16 @@ ScatlenList<T>::~ScatlenList()
 {}
 
 template<typename T>
-std::shared_ptr<const ScatlenList<T>> ScatlenList<T>::GetInstance()
+std::shared_ptr<const ScatlenList<T>> ScatlenList<T>::GetInstance(const char* pcFile)
 {
 	std::lock_guard<std::mutex> _guard(s_mutex);
 
 	if(!s_inst)
-		s_inst = std::shared_ptr<ScatlenList<T>>(new ScatlenList<T>());
+	{
+		//s_inst = std::make_shared<ScatlenList<T>>("");
+		s_inst = std::shared_ptr<ScatlenList<T>>(new ScatlenList<T>(
+			pcFile ? pcFile : "res/data/scatlens.xml", ""));
+	}
 
 	return s_inst;
 }

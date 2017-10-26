@@ -70,15 +70,15 @@ class PeriodicSystem
 		static std::shared_ptr<PeriodicSystem> s_inst;
 		static std::mutex s_mutex;
 
-		PeriodicSystem();
+		PeriodicSystem(const std::string& strFile, const std::string& strXmlRoot="");
 
 	protected:
 		std::vector<elem_type> s_vecAtoms;
 		std::string s_strSrc, s_strSrcUrl;
 
 	public:
-		virtual ~PeriodicSystem();
-		static std::shared_ptr<const PeriodicSystem> GetInstance();
+		~PeriodicSystem();
+		static std::shared_ptr<const PeriodicSystem> GetInstance(const char* pcFile=nullptr);
 
 		std::size_t GetNumAtoms() const { return s_vecAtoms.size(); }
 		const elem_type& GetAtom(std::size_t i) const
@@ -130,15 +130,15 @@ class FormfactList
 		static std::shared_ptr<FormfactList> s_inst;
 		static std::mutex s_mutex;
 
-		FormfactList();
+		FormfactList(const std::string& strFile, const std::string& strXmlRoot="");
 
 	protected:
 		std::vector<elem_type> s_vecAtoms, s_vecIons;
 		std::string s_strSrc, s_strSrcUrl;
 
 	public:
-		virtual ~FormfactList();
-		static std::shared_ptr<const FormfactList> GetInstance();
+		~FormfactList();
+		static std::shared_ptr<const FormfactList> GetInstance(const char* pcFile=nullptr);
 
 		std::size_t GetNumAtoms() const { return s_vecAtoms.size(); }
 		const elem_type& GetAtom(std::size_t iFormfact) const
@@ -206,15 +206,15 @@ class MagFormfactList
 		static std::shared_ptr<MagFormfactList> s_inst;
 		static std::mutex s_mutex;
 
-		MagFormfactList();
+		MagFormfactList(const std::string& strFile, const std::string& strXmlRoot="");
 
 	protected:
 		std::vector<elem_type> s_vecAtoms;
 		std::string s_strSrc, s_strSrcUrl;
 
 	public:
-		virtual ~MagFormfactList();
-		static std::shared_ptr<const MagFormfactList> GetInstance();
+		~MagFormfactList();
+		static std::shared_ptr<const MagFormfactList> GetInstance(const char* pcFile=nullptr);
 
 		std::size_t GetNumAtoms() const { return s_vecAtoms.size(); }
 		const elem_type& GetAtom(std::size_t iFormfact) const
@@ -283,15 +283,15 @@ class ScatlenList
 		static std::shared_ptr<ScatlenList> s_inst;
 		static std::mutex s_mutex;
 
-		ScatlenList();
+		ScatlenList(const std::string& strFile, const std::string& strXmlRoot="");
 
 	protected:
 		std::vector<elem_type> s_vecElems, s_vecIsotopes;
 		std::string s_strSrc, s_strSrcUrl;
 
 	public:
-		virtual ~ScatlenList();
-		static std::shared_ptr<const ScatlenList> GetInstance();
+		~ScatlenList();
+		static std::shared_ptr<const ScatlenList> GetInstance(const char* pcFile=nullptr);
 
 		std::size_t GetNumElems() const { return s_vecElems.size(); }
 		const elem_type& GetElem(std::size_t i) const

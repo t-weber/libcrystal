@@ -15,17 +15,14 @@
 namespace xtl {
 
 template<class t_real>
-SpaceGroups<t_real>::SpaceGroups(const char* pcMainFile)
+SpaceGroups<t_real>::SpaceGroups(const std::string& strFile, const std::string& strXmlRoot)
 {
-	if(!pcMainFile)
-		pcMainFile = "res/data/sgroups.xml";
-
 	// load general space group list
-	m_bOk = LoadSpaceGroups(pcMainFile, 1);
+	m_bOk = LoadSpaceGroups(strFile, 1, strXmlRoot);
 
 	// load custom-defined space groups
-	LoadSpaceGroups("res/data/sg_user.xml", 0);
-	LoadSpaceGroups("data/sg_user.xml", 0);
+	LoadSpaceGroups("res/data/sg_user.xml", 0 /*, strXmlRoot*/);
+	LoadSpaceGroups("data/sg_user.xml", 0 /*, strXmlRoot*/);
 }
 
 
@@ -62,12 +59,12 @@ const SpaceGroup<t_real>* SpaceGroups<t_real>::Find(const std::string& strSG) co
 
 
 template<class t_real>
-bool SpaceGroups<t_real>::LoadSpaceGroups(const char* pcFile, bool bMandatory)
+bool SpaceGroups<t_real>::LoadSpaceGroups(const std::string& strFile, bool bMandatory, const std::string& strXmlRoot)
 {
 	using t_mat = typename SpaceGroup<t_real>::t_mat;
 	//using t_vec = typename SpaceGroup<t_real>::t_vec;
 
-	std::string strTabFile = find_resource(pcFile, bMandatory);
+	std::string strTabFile = find_resource(strFile, bMandatory);
 	if(strTabFile == "")
 		return false;
 	tl::log_debug("Loading space groups from file \"", strTabFile, "\".");
@@ -76,7 +73,7 @@ bool SpaceGroups<t_real>::LoadSpaceGroups(const char* pcFile, bool bMandatory)
 	if(!xml.Load(strTabFile.c_str(), tl::PropType::XML))
 		return false;
 
-	//unsigned int iNumSGs = xml.Query<unsigned int>("sgroups/num_groups", 230);
+	//unsigned int iNumSGs = xml.Query<unsigned int>(strXmlRoot + "/sgroups/num_groups", 230);
 	typedef typename t_mapSpaceGroups::value_type t_val;
 
 	unsigned int iSg = 0;
@@ -89,10 +86,10 @@ bool SpaceGroups<t_real>::LoadSpaceGroups(const char* pcFile, bool bMandatory)
 		if(!xml.Exists(strGroup.c_str()))
 			break;
 
-		unsigned int iSgNr = xml.Query<unsigned int>((strGroup+"/number").c_str());
-		std::string strName = tl::trimmed(xml.Query<std::string>((strGroup+"/name").c_str()));
-		std::string strLaue = tl::trimmed(xml.Query<std::string>((strGroup+"/lauegroup").c_str()));
-		unsigned int iNumTrafos = xml.Query<unsigned int>((strGroup+"/num_trafos").c_str(), 0);
+		unsigned int iSgNr = xml.Query<unsigned int>(strXmlRoot + "/" + strGroup + "/number");
+		std::string strName = tl::trimmed(xml.Query<std::string>(strXmlRoot + "/" + strGroup + "/name"));
+		std::string strLaue = tl::trimmed(xml.Query<std::string>(strXmlRoot + "/" + strGroup + "/lauegroup"));
+		unsigned int iNumTrafos = xml.Query<unsigned int>(strXmlRoot + "/" + strGroup + "/num_trafos", 0);
 
 		std::vector<t_mat> vecTrafos;
 		std::vector<unsigned int> vecInvTrafos, vecPrimTrafos, vecCenterTrafos;
@@ -108,7 +105,7 @@ bool SpaceGroups<t_real>::LoadSpaceGroups(const char* pcFile, bool bMandatory)
 			if(!xml.Exists(strTrafo.c_str()))
 				break;
 
-			std::string strTrafoVal = xml.Query<std::string>(strTrafo.c_str());
+			std::string strTrafoVal = xml.Query<std::string>(strXmlRoot + "/" + strTrafo);
 			std::pair<std::string, std::string> pairSg = tl::split_first(strTrafoVal, std::string(";"), 1);
 
 			std::istringstream istrMat(pairSg.first);
@@ -152,9 +149,9 @@ bool SpaceGroups<t_real>::LoadSpaceGroups(const char* pcFile, bool bMandatory)
 		{ return sg1->GetNr() < sg2->GetNr(); });
 
 	if(s_strSrc == "")
-		s_strSrc = xml.Query<std::string>("sgroups/source", "");
+		s_strSrc = xml.Query<std::string>(strXmlRoot + "/sgroups/source", "");
 	if(s_strUrl == "")
-		s_strUrl = xml.Query<std::string>("sgroups/source_url", "");
+		s_strUrl = xml.Query<std::string>(strXmlRoot + "/sgroups/source_url", "");
 
 
 	if(g_vecSpaceGroups.size() < 230)
@@ -165,12 +162,15 @@ bool SpaceGroups<t_real>::LoadSpaceGroups(const char* pcFile, bool bMandatory)
 
 
 template<class t_real>
-std::shared_ptr<const SpaceGroups<t_real>> SpaceGroups<t_real>::GetInstance()
+std::shared_ptr<const SpaceGroups<t_real>> SpaceGroups<t_real>::GetInstance(const char *pcFile)
 {
 	std::lock_guard<std::mutex> _guard(s_mutex);
 
 	if(!s_inst)
-		s_inst = std::shared_ptr<SpaceGroups>(new SpaceGroups());
+	{
+		s_inst = std::shared_ptr<SpaceGroups>(new SpaceGroups(
+			pcFile ? pcFile : "res/data/sgroups.xml", ""));
+	}
 
 	return s_inst;
 }

@@ -157,7 +157,7 @@ class SpaceGroups
 #ifdef _SGR_NO_SINGLETON
 	public:
 #endif
-		SpaceGroups(const char* pcMainFile=nullptr);
+		SpaceGroups(const std::string& strFile, const std::string& strXmlRoot="");
 
 	protected:
 		t_mapSpaceGroups g_mapSpaceGroups;
@@ -166,11 +166,11 @@ class SpaceGroups
 		bool m_bOk = 0;
 
 	protected:
-		bool LoadSpaceGroups(const char* pcFile, bool bMandatory=1);
+		bool LoadSpaceGroups(const std::string& strFile, bool bMandatory=1, const std::string& strXmlRoot="");
 
 	public:
-		virtual ~SpaceGroups();
-		static std::shared_ptr<const SpaceGroups<t_real>> GetInstance();
+		~SpaceGroups();
+		static std::shared_ptr<const SpaceGroups<t_real>> GetInstance(const char *pcFile = nullptr);
 
 		const t_mapSpaceGroups* get_space_groups() const;
 		const t_vecSpaceGroups* get_space_groups_vec() const;
