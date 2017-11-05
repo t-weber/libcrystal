@@ -70,6 +70,9 @@ class PeriodicSystem
 		static std::shared_ptr<PeriodicSystem> s_inst;
 		static std::mutex s_mutex;
 
+#ifdef _FF_NO_SINGLETON
+	public:
+#endif
 		PeriodicSystem(const std::string& strFile, const std::string& strXmlRoot="");
 
 	protected:
@@ -130,6 +133,9 @@ class FormfactList
 		static std::shared_ptr<FormfactList> s_inst;
 		static std::mutex s_mutex;
 
+#ifdef _FF_NO_SINGLETON
+	public:
+#endif
 		FormfactList(const std::string& strFile, const std::string& strXmlRoot="");
 
 	protected:
@@ -206,6 +212,9 @@ class MagFormfactList
 		static std::shared_ptr<MagFormfactList> s_inst;
 		static std::mutex s_mutex;
 
+#ifdef _FF_NO_SINGLETON
+	public:
+#endif
 		MagFormfactList(const std::string& strFile, const std::string& strXmlRoot="");
 
 	protected:
@@ -283,6 +292,9 @@ class ScatlenList
 		static std::shared_ptr<ScatlenList> s_inst;
 		static std::mutex s_mutex;
 
+#ifdef _FF_NO_SINGLETON
+	public:
+#endif
 		ScatlenList(const std::string& strFile, const std::string& strXmlRoot="");
 
 	protected:

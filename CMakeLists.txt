@@ -47,7 +47,7 @@ add_definitions(-std=c++11)
 # build
 # -----------------------------------------------------------------------------
 add_library(xtl SHARED
-	version.cpp libs/globals.cpp
+	version.cpp libs/libxtl.cpp libs/globals.cpp
 	libs/formfactors/formfact.cpp
 	libs/spacegroups/crystalsys.cpp libs/spacegroups/spacegroup.cpp
 	tlibs/log/log.cpp
