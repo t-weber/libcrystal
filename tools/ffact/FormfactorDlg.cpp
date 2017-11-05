@@ -9,7 +9,6 @@
 #include "libs/formfactors/formfact.h"
 #include "tlibs/string/spec_char.h"
 #include "tlibs/phys/term.h"
-#include "libs/qthelper.h"
 
 using t_real = t_real_glob;
 

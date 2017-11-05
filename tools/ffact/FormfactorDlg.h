@@ -16,8 +16,8 @@
 
 #include "ui/ui_formfactors.h"
 
-#include "libs/qthelper.h"
-#include "libs/qwthelper.h"
+#include "libs/qt/qthelper.h"
+#include "libs/qt/qwthelper.h"
 #include "libs/globals.h"
 
 
