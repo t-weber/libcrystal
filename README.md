@@ -1,2 +1,2 @@
 # libcrystal
-Crystal calculations.
+Crystallographic calculation library.
